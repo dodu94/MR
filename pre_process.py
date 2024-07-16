@@ -181,11 +181,11 @@ def pre_process(file: io.BytesIO) -> tuple[docx.Document, str]:
     author_name = (
         old_mr.tables[AUTHOR_NAME["table"]]
         .cell(*AUTHOR_NAME["cell"])
-        .text.split("/")
+        .text.split("/")[0]
         .strip()
     )
     try:
-        dms = dms_numbers.loc[author_name, newyear, newmonth]
+        dms = dms_numbers.loc[author_name, newyear, newmonth]["DMS"].values[0]
     except:
         logging.error(
             f"Could not find DMS number for {author_name} in {newyear} {newmonth}"
