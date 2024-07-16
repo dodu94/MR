@@ -5,6 +5,8 @@ import docx
 import io
 from docx.table import _Cell
 from copy import deepcopy
+from process_dms import parse_DMS
+import logging
 
 # PARAMETERS
 REPORT_NUMBER = {"table": 0, "cell": (0, 2)}
@@ -15,6 +17,7 @@ PERIODS = [
     {"table": 3, "cell": (0, 1)},
     {"table": 4, "cell": (0, 1)},
 ]
+AUTHOR_NAME = {"table": 6, "cell": (1, 0)}
 DATE_AUTHOR = {"table": 6, "cell": (2, 0)}
 DATE_APPROVAL = {"table": 6, "cell": (2, 1)}
 NEW_MILESTONE = {"table": 2, "cell": (1, 1)}
@@ -23,10 +26,23 @@ TO_HIGHLIGHT = [
     {"table": 1, "cell": (1, 3)},
     {"table": 3, "cell": (1, 1)},
     {"table": 5, "cell": (1, 1)},
-    DMS_CELL,
     MILESTONE_TO_COPY,
 ]
 
+MONTH_NAMES = {
+    1: "January",
+    2: "February",
+    3: "March",
+    4: "April",
+    5: "May",
+    6: "June",
+    7: "July",
+    8: "August",
+    9: "September",
+    10: "October",
+    11: "November",
+    12: "December",
+}
 
 # PATTERNS
 month_number_pat = re.compile(r"M\d+")
@@ -102,7 +118,10 @@ def _update_report_number(num: str, month: str, year: str):
     newmonth = change_period_str(month)
     if newmonth == "M01":
         year = int(year) + 1
-    return f"#{int(num[1:])+1:02d}_{newmonth}_{year}"
+    new_string_name = f"#{int(num[1:])+1:02d}_{newmonth}_{year}"
+    newmonth = MONTH_NAMES[int(newmonth[1:])]
+
+    return new_string_name, newmonth, year
 
 
 def pre_process(file: io.BytesIO) -> tuple[docx.Document, str]:
@@ -115,6 +134,7 @@ def pre_process(file: io.BytesIO) -> tuple[docx.Document, str]:
     # if file is None:
     #     raise FileNotFoundError("No .docx file found in the current directory")
     old_mr = docx.Document(file)
+
     # -- Update the month number and period --
     for period in PERIODS:
         cell = old_mr.tables[period["table"]].cell(*period["cell"])
@@ -153,8 +173,27 @@ def pre_process(file: io.BytesIO) -> tuple[docx.Document, str]:
     # -- get the new file name --
     match = pat_file_name.search(file.name)
     num, month, year = match.group().split()
-    new_number = _update_report_number(num, month, year).replace("_", " ")
+    new_number, newmonth, newyear = _update_report_number(num, month, year).replace(
+        "_", " "
+    )
     new_name = file.name[: match.start()] + new_number + ".docx"
+
+    # --- try to get name and dms ---
+    dms_numbers = parse_DMS()
+    author_name = (
+        old_mr.tables[AUTHOR_NAME["table"]]
+        .cell(*AUTHOR_NAME["cell"])
+        .text.split("/")
+        .strip()
+    )
+    try:
+        dms = dms_numbers.loc[author_name, newyear, newmonth]
+    except:
+        logging.error(
+            f"Could not find DMS number for {author_name} in {newyear} {newmonth}"
+        )
+        dms = "CHANGE THIS, DMS NOT FOUND"
+    old_mr.tables[DMS_CELL["table"]].cell(*DMS_CELL["cell"]).text = dms
 
     # save to stream
     new_mr = io.BytesIO()
