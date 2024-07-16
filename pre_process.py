@@ -173,10 +173,8 @@ def pre_process(file: io.BytesIO) -> tuple[docx.Document, str]:
     # -- get the new file name --
     match = pat_file_name.search(file.name)
     num, month, year = match.group().split()
-    new_number, newmonth, newyear = _update_report_number(num, month, year).replace(
-        "_", " "
-    )
-    new_name = file.name[: match.start()] + new_number + ".docx"
+    new_number, newmonth, newyear = _update_report_number(num, month, year)
+    new_name = file.name[: match.start()] + new_number.replace("_", " ") + ".docx"
 
     # --- try to get name and dms ---
     dms_numbers = parse_DMS()
