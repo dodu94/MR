@@ -1,5 +1,5 @@
 import streamlit as st
-from pre_process import pre_process
+from core.pre_process import pre_process
 
 # Configure layout of page, must be first streamlit call in script
 st.set_page_config(layout="wide")
