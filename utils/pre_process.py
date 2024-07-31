@@ -156,7 +156,7 @@ def pre_process(
 
     # -- Update the report number --
     report_number = old_mr.tables[REPORT_NUMBER["table"]].cell(*REPORT_NUMBER["cell"])
-    report_number.text = update_report_number(report_number.text)
+    report_number.text = update_report_number(report_number.text)[0]
 
     # -- Update the total hours --
     total_hours_cell = old_mr.tables[TOTAL_HOURS["table"]].cell(*TOTAL_HOURS["cell"])
