@@ -53,7 +53,7 @@ pat_file_name = re.compile(r"#\d+\s+M\d+\s+\d+")
 #
 pat_task = re.compile(r"Task\s+\d+\s\(\d+\)")
 pat_number = re.compile(r"\(\d+\)")
-pat_hours = re.compile(r"\d+\s+hours")
+pat_hours = re.compile(r"[\d\.]+\s+hours")
 
 
 # FUNCTIONS
