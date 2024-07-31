@@ -5,7 +5,7 @@ import docx
 import io
 from docx.table import _Cell
 from copy import deepcopy
-from process_dms import parse_DMS
+from utils.process_dms import parse_DMS
 import logging
 
 # PARAMETERS
@@ -22,9 +22,10 @@ DATE_AUTHOR = {"table": 6, "cell": (2, 0)}
 DATE_APPROVAL = {"table": 6, "cell": (2, 1)}
 NEW_MILESTONE = {"table": 2, "cell": (1, 1)}
 MILESTONE_TO_COPY = {"table": 4, "cell": (1, 1)}
+TOTAL_HOURS = {"table": 1, "cell": (1, 3)}
+SECTION3 = {"table": 3, "cell": (1, 1)}
 TO_HIGHLIGHT = [
-    {"table": 1, "cell": (1, 3)},
-    {"table": 3, "cell": (1, 1)},
+    SECTION3,
     {"table": 5, "cell": (1, 1)},
     MILESTONE_TO_COPY,
 ]
@@ -49,6 +50,10 @@ month_number_pat = re.compile(r"M\d+")
 date_pat = re.compile(r"(\d{2})/(\d{2})/(\d{4})")
 period_pat = re.compile(r"\d{2}/\d{2}/\d{4}\s*[-–]\s*\d{2}/\d{2}/\d{4}")
 pat_file_name = re.compile(r"#\d+\s+M\d+\s+\d+")
+#
+pat_task = re.compile(r"Task\s+\d+\s\(\d+\)")
+pat_number = re.compile(r"\(\d+\)")
+pat_hours = re.compile(r"\d+\s+hours")
 
 
 # FUNCTIONS
@@ -124,15 +129,10 @@ def _update_report_number(num: str, month: str, year: str):
     return new_string_name, newmonth, year
 
 
-def pre_process(file: io.BytesIO) -> tuple[docx.Document, str]:
-    # Identify the old monthly report
-    # file = None
-    # for file in os.listdir():
-    #     if file.endswith(".docx"):
-    #         old_mr = docx.Document(file)
-    #         break
-    # if file is None:
-    #     raise FileNotFoundError("No .docx file found in the current directory")
+def pre_process(
+    file: io.BytesIO, task_hours: dict[int, float], total_hours: float
+) -> tuple[docx.Document, str]:
+
     old_mr = docx.Document(file)
 
     # -- Update the month number and period --
@@ -158,6 +158,10 @@ def pre_process(file: io.BytesIO) -> tuple[docx.Document, str]:
     report_number = old_mr.tables[REPORT_NUMBER["table"]].cell(*REPORT_NUMBER["cell"])
     report_number.text = update_report_number(report_number.text)
 
+    # -- Update the total hours --
+    total_hours_cell = old_mr.tables[TOTAL_HOURS["table"]].cell(*TOTAL_HOURS["cell"])
+    total_hours_cell.text = str(total_hours)
+
     # -- Update the new milestone section --
     new_milestone = old_mr.tables[NEW_MILESTONE["table"]].cell(*NEW_MILESTONE["cell"])
     milestone_to_copy = old_mr.tables[MILESTONE_TO_COPY["table"]].cell(
@@ -169,6 +173,26 @@ def pre_process(file: io.BytesIO) -> tuple[docx.Document, str]:
     for location in TO_HIGHLIGHT:
         cell = old_mr.tables[location["table"]].cell(*location["cell"])
         highlight_cell(cell)
+
+    # -- Adventure in section 3 to find the tasks and apply the new hours --
+    sec3 = old_mr.tables[SECTION3["table"]].cell(*SECTION3["cell"])
+    for par in sec3.paragraphs:
+        if pat_task.search(par.text) is not None:
+            # identify the task
+            try:
+                task = pat_number.search(par.text).group().strip("(").strip(")")
+            except AttributeError:
+                raise RuntimeError(f"Could not find a task number in {par.text}")
+            newhours = task_hours[int(task)]
+            new_text = pat_hours.sub(f"{newhours} hours", par.text)
+            # Replace the first run with the new text and delete all others
+            for i, run in enumerate(par.runs):
+                if i == 0:
+                    run.text = new_text
+                    # de-highlight
+                    run.font.highlight_color = None
+                else:
+                    run.clear()
 
     # -- get the new file name --
     match = pat_file_name.search(file.name)
