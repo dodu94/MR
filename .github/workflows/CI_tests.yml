@@ -1,0 +1,33 @@
+name: pytest
+
+# Controls when the workflow will run
+on: [push, pull_request, workflow_dispatch]
+  # Triggers the workflow on push or pull request events but only for the master branch
+  # workflow_dispatch allows you to run this workflow manually from the Actions tab
+
+jobs:
+  test:
+    # The type of runner and python versions that the job will run on
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+      fail-fast: false
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+
+      # Install python
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # Activate environment and run pytest
+      - name: Testing - Linux
+        if: runner.os == 'Linux'
+        run: |
+          set -o pipefail
+          pytest

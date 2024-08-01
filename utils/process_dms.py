@@ -21,26 +21,32 @@ def parse_DMS() -> pd.DataFrame:
     dummy_tag = "Monthly Report"
     dms = pd.read_csv("DMS_numbers.csv")
     rows = []
-    for value in dms["Description"].values:
+    # cycle on the Description column
+    for _, row in dms.iterrows():
+        value = row["Description"]
+        # there should be an year, if not parsing fails
         try:
             year = pat_year.search(value).group()
         except AttributeError:
             print(f"{value} could not be parsed")
             continue
 
+        # there should be a month, if not, parsing fails
+        found = False
         for month in months:
             if month in value:
+                found = True
                 break
+        if not found:
+            print(f"{value} could not be parsed")
+            continue
+
         for string in [dummy_tag, month, year]:
             value = value.replace(string, "")
         name = value.strip()
         rows.append(
-            {
-                "Name": name,
-                "Month": month,
-                "Year": year,
-            }
+            {"Name": name, "Month": month, "Year": year, "DMS": row["Reference"]}
         )
+
     dms_new = pd.DataFrame(rows)
-    dms_new["DMS"] = dms["Reference"]
     return dms_new.set_index(["Name", "Year", "Month"])
