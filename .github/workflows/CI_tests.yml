@@ -24,6 +24,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+        
+      # Install dependencies
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
       # Activate environment and run pytest
       - name: Testing - Linux
