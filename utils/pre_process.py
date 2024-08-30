@@ -129,6 +129,12 @@ def _update_report_number(num: str, month: str, year: str):
     return new_string_name, newmonth, year
 
 
+def _extract_name(filename: str) -> str:
+    pieces = filename.split("Report")
+    name = pieces[1].split("#")[0]
+    return name.strip()
+
+
 def pre_process(
     file: io.BytesIO, task_hours: dict[int, float], total_hours: float
 ) -> tuple[docx.Document, str]:
@@ -202,12 +208,7 @@ def pre_process(
 
     # --- try to get name and dms ---
     dms_numbers = parse_DMS()
-    author_name = (
-        old_mr.tables[AUTHOR_NAME["table"]]
-        .cell(*AUTHOR_NAME["cell"])
-        .text.split("/")[0]
-        .strip()
-    )
+    author_name = _extract_name(file.name)
     try:
         dms = dms_numbers.loc[author_name, newyear, newmonth]["DMS"]
     except KeyError:
