@@ -19,7 +19,7 @@ def parse_DMS() -> pd.DataFrame:
         "December",
     ]
     dummy_tag = "Monthly Report"
-    dms = pd.read_csv("DMS_numbers.csv")
+    dms = pd.read_excel("DMS_numbers.xlsx")
     rows = []
     # cycle on the Description column
     for _, row in dms.iterrows():
@@ -50,3 +50,4 @@ def parse_DMS() -> pd.DataFrame:
 
     dms_new = pd.DataFrame(rows)
     return dms_new.set_index(["Name", "Year", "Month"])
+True
