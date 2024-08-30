@@ -209,8 +209,8 @@ def pre_process(
         .strip()
     )
     try:
-        dms = dms_numbers.loc[author_name, newyear, newmonth]["DMS"].values[0]
-    except:
+        dms = dms_numbers.loc[author_name, newyear, newmonth]["DMS"]
+    except KeyError:
         logging.error(
             f"Could not find DMS number for {author_name} in {newyear} {newmonth}"
         )
