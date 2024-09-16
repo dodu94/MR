@@ -23,6 +23,7 @@ def process_extmytime(text: str) -> tuple[float, float]:
             break
     # count all hours
     tasks_hours = {}
+    message = ""
     for line in lines:
         if "Task:" in line:
             task_number = int(pat_task.search(line).group())
@@ -32,6 +33,9 @@ def process_extmytime(text: str) -> tuple[float, float]:
             assert len(hours) == 2  # if not we have a problem
             start_time = datetime.datetime.strptime(hours[0], "%H:%M")
             end_time = datetime.datetime.strptime(hours[1], "%H:%M")
+            if start_time.minute % 15 != 0 or end_time.minute % 15 != 0:
+                message = "There are time slots that do not comply with the 15 minutes granularity rule. Please, " \
+                          "correct the hours in ExtMyTime before proceeding with the Monthly Report."
             hour_interval = end_time - start_time
             hour_interval = hour_interval.total_seconds() / 3600
             if task_number in tasks_hours:
@@ -40,4 +44,7 @@ def process_extmytime(text: str) -> tuple[float, float]:
                 tasks_hours[task_number] = hour_interval
     # make sure that the total hours and sum of tasks give the same result
     assert sum(tasks_hours.values()) == float(total_hours)
-    return total_hours, tasks_hours
+    return total_hours, tasks_hours, message
+
+
+
