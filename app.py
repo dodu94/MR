@@ -8,11 +8,14 @@ st.set_page_config(layout="wide")
 # add a button for the extmytime process
 text = st.text_area("Copy your Extmytime here")
 if text:
-    total_hours, tasks_hours = process_extmytime(text)
-    st.write("Total hours:", total_hours)
-    st.write("Tasks hours:", tasks_hours)
+    total_hours, tasks_hours, message = process_extmytime(text)
+    if message == "":
+        st.write("Total hours:", total_hours)
+        st.write("Tasks hours:", tasks_hours)
+    else:
+        st.write(message)
 
-if text:
+if text and message != "":
     uploaded_file = st.file_uploader("Upload last month MR")
 
     downloaded = False
