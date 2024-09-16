@@ -15,7 +15,7 @@ if text:
     else:
         st.write(message)
 
-if text and message != "":
+if text and message == "":
     uploaded_file = st.file_uploader("Upload last month MR")
 
     downloaded = False
