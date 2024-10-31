@@ -189,7 +189,10 @@ def pre_process(
                 task = pat_number.search(par.text).group().strip("(").strip(")")
             except AttributeError:
                 raise RuntimeError(f"Could not find a task number in {par.text}")
-            newhours = task_hours[int(task)]
+            try:
+                newhours = task_hours[int(task)]
+            except KeyError:
+                newhours = 0.0
             new_text = pat_hours.sub(f"{newhours} hours", par.text)
             # Replace the first run with the new text and delete all others
             for i, run in enumerate(par.runs):
